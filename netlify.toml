@@ -1,0 +1,37 @@
+# Netlify Configuration for Hana House เชียงของ
+# Static site — no build step required
+
+[build]
+  publish = "."
+
+# Security & Performance Headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Cache static assets aggressively
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
+# Redirect www to non-www (if custom domain is added later)
+[[redirects]]
+  from = "https://www.hana-house-ck.netlify.app/*"
+  to = "https://hana-house-ck.netlify.app/:splat"
+  status = 301
+  force = true
