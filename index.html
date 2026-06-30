@@ -69,30 +69,56 @@
 
   <!-- Conversion Tracking Functions -->
   <script>
-  function gtag_report_conversion(url, send_to_id, target) {
+  function gtag_report_conversion(url, send_to_id, target, options) {
+    options = options || {};
     var navigated = false;
+    var popupWindow = null;
+
+    if (target === '_blank' && url) {
+      popupWindow = window.open('about:blank', '_blank', 'noopener,noreferrer');
+    }
+
     var navigate = function () {
       if (navigated) return;
       navigated = true;
       if (typeof url !== 'undefined' && url) {
         if (target === '_blank') {
-          window.open(url, '_blank', 'noopener,noreferrer');
+          if (popupWindow && !popupWindow.closed) {
+            popupWindow.location.href = url;
+          } else {
+            window.location = url;
+          }
         } else {
           window.location = url;
         }
       }
     };
 
+    var conversionPayload = {
+      'send_to': send_to_id,
+      'event_callback': navigate,
+      'event_timeout': 1000
+    };
+
+    if (typeof options.value !== 'undefined') {
+      conversionPayload.value = options.value;
+    }
+
+    if (typeof options.currency !== 'undefined') {
+      conversionPayload.currency = options.currency;
+    }
+
+    if (typeof options.transaction_id !== 'undefined') {
+      conversionPayload.transaction_id = options.transaction_id;
+    }
+
     // Fallback: navigate after 1s even if gtag callback never fires
     // (e.g. ad blocker, script load failure, slow network)
-    setTimeout(navigate, 1000);
+    setTimeout(navigate, 1200);
 
     // Try to fire conversion tracking
     if (typeof gtag === 'function') {
-      gtag('event', 'conversion', {
-        'send_to': send_to_id,
-        'event_callback': navigate
-      });
+      gtag('event', 'conversion', conversionPayload);
     } else {
       // gtag not available (blocked/not loaded), navigate immediately
       navigate();
@@ -103,7 +129,10 @@
   function trackAgoda(url) {
     // Event snippet for Click_Agoda (1) conversion page
     // send_to: AW-17041044383/BtZSCJDYpqocEJ_n5r0_
-    return gtag_report_conversion(url, AGODA_CONVERSION_ID, '_blank');
+    return gtag_report_conversion(url, AGODA_CONVERSION_ID, '_blank', {
+      value: 1.0,
+      currency: 'THB'
+    });
   }
 
   function trackCall(url) {
