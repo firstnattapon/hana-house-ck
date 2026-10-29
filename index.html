@@ -71,33 +71,9 @@
   <script>
   function gtag_report_conversion(url, send_to_id, target, options) {
     options = options || {};
-    var navigated = false;
-    var popupWindow = null;
-
-    if (target === '_blank' && url) {
-      popupWindow = window.open('about:blank', '_blank', 'noopener,noreferrer');
-    }
-
-    var navigate = function () {
-      if (navigated) return;
-      navigated = true;
-      if (typeof url !== 'undefined' && url) {
-        if (target === '_blank') {
-          if (popupWindow && !popupWindow.closed) {
-            popupWindow.location.href = url;
-          } else {
-            window.location = url;
-          }
-        } else {
-          window.location = url;
-        }
-      }
-    };
 
     var conversionPayload = {
-      'send_to': send_to_id,
-      'event_callback': navigate,
-      'event_timeout': 1000
+      'send_to': send_to_id
     };
 
     if (typeof options.value !== 'undefined') {
@@ -111,6 +87,30 @@
     if (typeof options.transaction_id !== 'undefined') {
       conversionPayload.transaction_id = options.transaction_id;
     }
+
+    // New-tab links: this page stays open, so the hit finishes in the
+    // background — just fire it and let the browser open the link itself.
+    // (Don't pre-open a blank tab and redirect it later: window.open() with
+    // "noopener" returns null, so the redirect lands on THIS tab instead,
+    // leaving the user on an empty tab with the site replaced by Agoda.)
+    if (target === '_blank') {
+      if (typeof gtag === 'function') {
+        gtag('event', 'conversion', conversionPayload);
+      }
+      return true;
+    }
+
+    var navigated = false;
+    var navigate = function () {
+      if (navigated) return;
+      navigated = true;
+      if (typeof url !== 'undefined' && url) {
+        window.location = url;
+      }
+    };
+
+    conversionPayload.event_callback = navigate;
+    conversionPayload.event_timeout = 1000;
 
     // Fallback: navigate after 1s even if gtag callback never fires
     // (e.g. ad blocker, script load failure, slow network)
